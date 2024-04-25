@@ -1,0 +1,121 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
+ */
+package controller.blog;
+
+import dal.BlogDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import model.Account;
+import model.Blog;
+
+/**
+ *
+ * @author Warspite
+ */
+@MultipartConfig
+public class BlogListTableController extends HttpServlet {
+
+    /**
+     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
+     * methods.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try ( PrintWriter out = response.getWriter()) {
+            /* TODO output your page here. You may use following sample code. */
+            out.println("<!DOCTYPE html>");
+            out.println("<html>");
+            out.println("<head>");
+            out.println("<title>Servlet BlogListTableController</title>");            
+            out.println("</head>");
+            out.println("<body>");
+            out.println("<h1>Servlet BlogListTableController at " + request.getContextPath() + "</h1>");
+            out.println("</body>");
+            out.println("</html>");
+        }
+    }
+
+    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
+    /**
+     * Handles the HTTP <code>GET</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+         // get account id from session
+        HttpSession session = request.getSession();
+        Account account = (Account) session.getAttribute("account");
+        if(account==null){
+            request.setAttribute("needLogin", "You need to login to proceed!");
+            request.getRequestDispatcher("Login.jsp").forward(request, response);
+        }else{
+            if(account.getRole_id()!=2){ // check if acc is manager
+                response.sendRedirect("Error.jsp");
+            }else{
+                BlogDAO dao = new BlogDAO();
+                ArrayList<Blog> blogList = dao.BlogList();
+                
+                //remove blog with status 0 from list
+                int listSizeOld = blogList.size();
+                Iterator<Blog> i = blogList.iterator();
+                while (i.hasNext()) {
+                    int status = i.next().getStatus(); 
+                    if(status==0){
+                        i.remove();
+                    }
+                }
+                int listSize = blogList.size();
+
+                request.setAttribute("totalBlogCount", listSize);
+                request.setAttribute("blogList", blogList);
+                request.getRequestDispatcher("Manage_Blog.jsp").forward(request, response);
+            }
+        }
+    }
+
+    /**
+     * Handles the HTTP <code>POST</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    /**
+     * Returns a short description of the servlet.
+     *
+     * @return a String containing servlet description
+     */
+    @Override
+    public String getServletInfo() {
+        return "Short description";
+    }// </editor-fold>
+
+}
